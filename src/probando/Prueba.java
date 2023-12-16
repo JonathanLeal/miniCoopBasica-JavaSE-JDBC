@@ -67,6 +67,10 @@ public class Prueba {
         if (idAccion == 2) {
             ingresarDinero();
         }
+        
+        if (idAccion == 3) {
+            retirarDinero();
+        }
     }
     
     private static int obtenerCuenta(String email, String pass) throws Exception{
@@ -103,6 +107,45 @@ public class Prueba {
             System.out.println("erro al obtener el monto: "+e.getMessage());
         }
         return monto;
+    }
+    
+    private static void retirarDinero() throws  Exception{
+        Conexion conexion = new Conexion();
+        PreparedStatement ingreso = conexion.con.prepareStatement("UPDATE cuenta SET monto = monto - ? WHERE id = ?");
+        PreparedStatement vitacora = conexion.con.prepareStatement("insert into pago_cuenta(usuario_id,acciones_cuenta,cantidadAfectada) values(?,?,?)");
+        try {
+            String email = JOptionPane.showInputDialog("Ingresa tu email");
+            String pass = JOptionPane.showInputDialog("Ingresa tu password");
+            int idUsuario = retornarIdUsuario(email, pass);
+            if (idUsuario > 0) {
+                
+                int idCuenta = obtenerCuenta(email, pass);
+                if (idCuenta > 0) {
+                    double monto = Double.parseDouble(JOptionPane.showInputDialog("Ingresa el monto a retirar"));
+                    double montoActual = obtenerMontoActual(email, pass);
+                    
+                    double nuevoMonto = montoActual - monto;
+                    
+                    ingreso.setDouble(1, monto);
+                    ingreso.setInt(2, idCuenta);
+                    ingreso.executeUpdate();
+                    
+                    vitacora.setInt(1, idUsuario);
+                    vitacora.setInt(2, 2);
+                    vitacora.setDouble(3, monto);
+                    vitacora.executeUpdate();
+                    
+                    JOptionPane.showMessageDialog(null, "Dinero retirado con exito");
+                } else {
+                    JOptionPane.showMessageDialog(null, "No tiene una cuenta de ahorro con su usuario");
+                }
+                
+            } else {
+                JOptionPane.showMessageDialog(null, "Credenciales incorrectas");
+            }
+        } catch (Exception e) {
+            System.out.println("error al ingresar dinero: "+e.getMessage());
+        }
     }
     
     private static void ingresarDinero() throws  Exception{
