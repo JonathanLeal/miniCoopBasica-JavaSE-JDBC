@@ -58,8 +58,7 @@ public class Prueba {
         int idAccion = Integer.parseInt(JOptionPane.showInputDialog("1. Crear cuenta\n"+
                                                                     "2. Ingresar dinero\n"+
                                                                     "3. Retirar dinero\n"
-                                                                   +"4. Transferir a otra cuenta\n"
-                                                                   +"5. Hacer doble transaccion"));
+                                                                   +"4. Transferir a otra cuenta\n"));
         if (idAccion == 1) {
             crearCuenta(idAccion);
         }
@@ -70,6 +69,10 @@ public class Prueba {
         
         if (idAccion == 3) {
             retirarDinero();
+        }
+        
+        if (idAccion == 4) {
+            transferirACuenta();
         }
     }
     
@@ -107,6 +110,58 @@ public class Prueba {
             System.out.println("erro al obtener el monto: "+e.getMessage());
         }
         return monto;
+    }
+    
+    private static void transferirACuenta() throws Exception{
+        Conexion conexion = new Conexion();
+        PreparedStatement aumento = conexion.con.prepareStatement("UPDATE cuenta SET monto = monto + ? WHERE usuarios_id = ?");
+        PreparedStatement decremento = conexion.con.prepareStatement("UPDATE cuenta SET monto = monto - ? WHERE id = ?");
+        
+        try {
+            String email = JOptionPane.showInputDialog("Ingresa tu email");
+            String pass = JOptionPane.showInputDialog("Ingresa tu password");
+            int idUsuario = retornarIdUsuario(email, pass);
+            
+            if (idUsuario > 0) {
+                
+                int idCuenta = obtenerCuenta(email, pass);
+                if (idCuenta > 0) {
+                    int numCuenta = Integer.parseInt(JOptionPane.showInputDialog("Ingrese el numero de cuenta al que transferira"));
+                    
+                    if (numCuenta > 0) {
+                        
+                        double monto = Double.parseDouble(JOptionPane.showInputDialog("Ingrese la cantidad que desea tranferir"));
+                        double montoActual = obtenerMontoActual(email, pass);
+                        if (monto <= montoActual) {
+                            aumento.setDouble(1, monto);
+                            aumento.setInt(2, idUsuario);
+                            aumento.executeUpdate();
+                            
+                            decremento.setDouble(1, monto);
+                            decremento.setInt(2, numCuenta);
+                            decremento.executeUpdate();
+                            
+                            JOptionPane.showMessageDialog(null, "Transferencia realiza con exito");
+                            
+                        } else {
+                            JOptionPane.showMessageDialog(null, "El pongo que quiere tranferir no puede ser mayor a su monto actual");
+                        }
+                        
+                    } else {
+                        JOptionPane.showMessageDialog(null, "No existe una cuenta con ese id");
+                    }
+                    
+                } else {
+                    JOptionPane.showMessageDialog(null, "Su usuario no tiene cuenta");
+                }
+                
+            } else {
+                JOptionPane.showMessageDialog(null, "Credenciales incorrectas");
+            }
+            
+        } catch (Exception e) {
+            System.out.println("error al hacer una transferencia: "+e.getMessage());
+        }
     }
     
     private static void retirarDinero() throws  Exception{
